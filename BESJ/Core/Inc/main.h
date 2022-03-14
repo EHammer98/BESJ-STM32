@@ -65,14 +65,14 @@ void Error_Handler(void);
 #define USART_RX_GPIO_Port GPIOA
 #define LD2_Pin GPIO_PIN_5
 #define LD2_GPIO_Port GPIOA
-#define Player2_Select_Pin GPIO_PIN_7
+#define Player2_Select_Pin GPIO_PIN_6
 #define Player2_Select_GPIO_Port GPIOA
+#define Player2_SelectA7_Pin GPIO_PIN_7
+#define Player2_SelectA7_GPIO_Port GPIOA
 #define Player1_Select_Pin GPIO_PIN_10
 #define Player1_Select_GPIO_Port GPIOB
 #define Player2_Right_Pin GPIO_PIN_7
 #define Player2_Right_GPIO_Port GPIOC
-#define Player2_Left_Pin GPIO_PIN_9
-#define Player2_Left_GPIO_Port GPIOA
 #define TMS_Pin GPIO_PIN_13
 #define TMS_GPIO_Port GPIOA
 #define TCK_Pin GPIO_PIN_14
