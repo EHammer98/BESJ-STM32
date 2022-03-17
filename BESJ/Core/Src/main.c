@@ -100,6 +100,7 @@ static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_TIM16_Init(void);
 static void MX_USART1_UART_Init(void);
+int fpgaTransmit(char* data);
 /* USER CODE BEGIN PFP */
 //PLAYER1
 int Player1_move(void);
@@ -122,6 +123,9 @@ void Centipede2_position(void);
 //MUSHROOM
 void mushroomFarm_INIT(void);
 void mushroomSpawn(void);
+
+//DATA array size
+int dataArraySize = 768;
 
 /* USER CODE END PFP */
 
@@ -178,17 +182,8 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	char First[]="6";
-	char Second[]="7";
-	//char rxData[50] = {0}; //Contains data send from the ESP over UART1
-	//HAL_UART_Transmit(&huart1, (uint8_t*)First, sizeof(First), 100);
-	HAL_UART_Transmit(&huart1, (uint8_t*)First, sizeof(First), 100);
-	HAL_UART_Transmit(&huart2, (uint8_t*)First, sizeof(First), 100);
-	HAL_Delay(2000);
-	HAL_UART_Transmit(&huart1, (uint8_t*)Second, sizeof(Second), 100);
-	HAL_UART_Transmit(&huart2, (uint8_t*)Second, sizeof(Second), 100);
-	HAL_Delay(2000);
-	/*
+
+
 	if (__HAL_TIM_GET_COUNTER(&htim16) - timer_val >= 1000) //runt elke 1khz
 	{
 		Player1_position(Player1_move());
@@ -201,7 +196,7 @@ int main(void)
 	{
 		//mushroomSpawn(); <-- geeft errors
 	}
-	 */
+
 
   }
   /* USER CODE END 3 */
@@ -508,6 +503,19 @@ int Player2_select(void)
 		return 0;
 	}
 }
+
+
+
+////DATA COM
+int fpgaTransmit(char* data){
+	for(int i = 0; i <= dataArraySize ; i++){
+		HAL_UART_Transmit(&huart1, (uint8_t*)&data[i], sizeof(&data[i]), 100);
+		HAL_UART_Transmit(&huart2, (uint8_t*)&data[i], sizeof(&data[i]), 100);
+	//HAL_Delay(1000);
+	}
+	return 1;
+}
+////
 /* USER CODE END 4 */
 
 /**
