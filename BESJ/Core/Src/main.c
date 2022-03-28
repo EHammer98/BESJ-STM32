@@ -54,6 +54,7 @@
 /* Private variables ---------------------------------------------------------*/
  TIM_HandleTypeDef htim16;
 
+UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
@@ -98,6 +99,8 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_TIM16_Init(void);
+static void MX_USART1_UART_Init(void);
+int fpgaTransmit(char* data);
 /* USER CODE BEGIN PFP */
 //PLAYER1
 int Player1_move(void);
@@ -120,6 +123,9 @@ void Centipede2_position(void);
 //MUSHROOM
 void mushroomFarm_INIT(void);
 void mushroomSpawn(void);
+
+//DATA array size
+int dataArraySize = 768;
 
 /* USER CODE END PFP */
 
@@ -158,6 +164,7 @@ int main(void)
   MX_GPIO_Init();
   MX_USART2_UART_Init();
   MX_TIM16_Init();
+  MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
   //INIT VARIABLES
   player1_x_position = 9;
@@ -165,7 +172,7 @@ int main(void)
   mushroomTimer = 0;
   HAL_TIM_Base_Start(&htim16);
   //INIT FUCNTIONS
-  mushroomFarmInit();
+  //mushroomFarmInit(); <-- geeft errors
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -175,18 +182,21 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+
+
 	if (__HAL_TIM_GET_COUNTER(&htim16) - timer_val >= 1000) //runt elke 1khz
 	{
 		Player1_position(Player1_move());
 		uart_buf_len = sprintf(uart_buf, "%d us\r\n", player1_x_position);
-		HAL_UART_Transmit(&huart2, (uint8_t *)uart_buf, uart_buf_len, 100);
+		//HAL_UART_Transmit(&huart2, (uint8_t *)uart_buf, uart_buf_len, 100);
 		timer_val = __HAL_TIM_GET_COUNTER(&htim16);
 		mushroomTimer++;
 	}
 	if(mushroomTimer == 10)
 	{
-		mushroomSpawn();
+		//mushroomSpawn(); <-- geeft errors
 	}
+
 
   }
   /* USER CODE END 3 */
@@ -200,6 +210,7 @@ void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+  RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
 
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
@@ -225,6 +236,12 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
 
   if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USART1;
+  PeriphClkInit.Usart1ClockSelection = RCC_USART1CLKSOURCE_PCLK1;
+  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
     Error_Handler();
   }
@@ -263,6 +280,41 @@ static void MX_TIM16_Init(void)
 }
 
 /**
+  * @brief USART1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USART1_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART1_Init 0 */
+
+  /* USER CODE END USART1_Init 0 */
+
+  /* USER CODE BEGIN USART1_Init 1 */
+
+  /* USER CODE END USART1_Init 1 */
+  huart1.Instance = USART1;
+  huart1.Init.BaudRate = 115200;
+  huart1.Init.WordLength = UART_WORDLENGTH_8B;
+  huart1.Init.StopBits = UART_STOPBITS_1;
+  huart1.Init.Parity = UART_PARITY_NONE;
+  huart1.Init.Mode = UART_MODE_TX_RX;
+  huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart1.Init.OverSampling = UART_OVERSAMPLING_16;
+  huart1.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+  huart1.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  if (HAL_UART_Init(&huart1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART1_Init 2 */
+
+  /* USER CODE END USART1_Init 2 */
+
+}
+
+/**
   * @brief USART2 Initialization Function
   * @param None
   * @retval None
@@ -278,7 +330,7 @@ static void MX_USART2_UART_Init(void)
 
   /* USER CODE END USART2_Init 1 */
   huart2.Instance = USART2;
-  huart2.Init.BaudRate = 38400;
+  huart2.Init.BaudRate = 115200;
   huart2.Init.WordLength = UART_WORDLENGTH_8B;
   huart2.Init.StopBits = UART_STOPBITS_1;
   huart2.Init.Parity = UART_PARITY_NONE;
@@ -313,40 +365,40 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : PC13 */
-  GPIO_InitStruct.Pin = GPIO_PIN_13;
+  /*Configure GPIO pin : B1_Pin */
+  GPIO_InitStruct.Pin = B1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+  HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : PA5 */
-  GPIO_InitStruct.Pin = GPIO_PIN_5;
+  /*Configure GPIO pin : LD2_Pin */
+  GPIO_InitStruct.Pin = LD2_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+  HAL_GPIO_Init(LD2_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PA7 PA9 */
-  GPIO_InitStruct.Pin = GPIO_PIN_7|GPIO_PIN_9;
+  /*Configure GPIO pins : Player2_Select_Pin Player2_SelectA7_Pin */
+  GPIO_InitStruct.Pin = Player2_Select_Pin|Player2_SelectA7_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PB10 PB3 PB4 PB5
-                           PB6 */
-  GPIO_InitStruct.Pin = GPIO_PIN_10|GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5
-                          |GPIO_PIN_6;
+  /*Configure GPIO pins : Player1_Select_Pin Player1_Left_Pin Player1_Shoot_Pin Player1_Right_Pin
+                           Player2_Shoot_Pin */
+  GPIO_InitStruct.Pin = Player1_Select_Pin|Player1_Left_Pin|Player1_Shoot_Pin|Player1_Right_Pin
+                          |Player2_Shoot_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : PC7 */
-  GPIO_InitStruct.Pin = GPIO_PIN_7;
+  /*Configure GPIO pin : Player2_Right_Pin */
+  GPIO_InitStruct.Pin = Player2_Right_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLDOWN;
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+  HAL_GPIO_Init(Player2_Right_GPIO_Port, &GPIO_InitStruct);
 
 }
 
@@ -451,6 +503,19 @@ int Player2_select(void)
 		return 0;
 	}
 }
+
+
+
+////DATA COM
+int fpgaTransmit(char* data){
+	for(int i = 0; i <= dataArraySize ; i++){
+		HAL_UART_Transmit(&huart1, (uint8_t*)&data[i], sizeof(&data[i]), 100);
+		HAL_UART_Transmit(&huart2, (uint8_t*)&data[i], sizeof(&data[i]), 100);
+	//HAL_Delay(1000);
+	}
+	return 1;
+}
+////
 /* USER CODE END 4 */
 
 /**
